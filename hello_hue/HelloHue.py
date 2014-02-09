@@ -46,6 +46,7 @@ class HelloHue(object):
     LIGHTS_TRANSITION_TIME = "transitiontime"
 
     GROUPS_ACTION = "action"
+    GROUPS_NAME = "name"
 
     EFFECT_COLORLOOP = "colorloop"
     EFFECT_NONE = "none"
@@ -199,6 +200,19 @@ class HelloHue(object):
         return klass.get_request("{0}/{1}".format(klass.A_LIGHTS, light_num))
 
     @classmethod
+    def get_all_groups(klass):
+        return klass.get_request(klass.A_GROUPS)
+
+    @classmethod
+    def get_group_attributes(klass, group_num):
+        return klass.get_request("{0}/{1}".format(klass.A_GROUPS, group_num))
+
+    @classmethod
+    def get_lights_in_group(klass, group_num):
+        group_attr = klass.get_group_attributes(group_num)
+        return [int(light_num) for light_num in group_attr[klass.A_LIGHTS]]
+
+    @classmethod
     def rename_light(klass, light_num, light_name):
         h = Http()
         params = {klass.LIGHTS_NAME : light_name}
@@ -208,3 +222,35 @@ class HelloHue(object):
                                                          num=light_num)
         resp = h.request(command_url, "PUT", json_params)
         return resp
+
+    @classmethod
+    def set_group_attributes(klass, group_num, group_name, group_members):
+        # the current API release doesn't support group creation...
+        h = Http()
+        group_str = [str(i) for i in group_members]
+        params = {klass.GROUPS_NAME : group_name,
+                  klass.A_LIGHTS : group_str}
+        json_params = json.dumps(params)
+        command_url = "{base_url}/{groups}/{group_num}".format(base_url=klass.URL_ADDRESS,
+                                                               groups=klass.A_GROUPS,
+                                                               group_num=group_num)
+        resp = h.request(command_url, "PUT", json_params)
+        return resp
+
+    @classmethod
+    def flip_light_switch(klass, light_num=None, group_num=None, tr_time=None):
+        if light_num:
+            lights = [light_num]
+        elif group_num:
+            lights = klass.get_lights_in_group(group_num)
+        else:
+            lights = [int(k) for k in klass.get_all_lights().keys()]
+
+        for light in lights:
+            status = klass.get_light_attributes(light)
+            is_light_on = status["state"]["on"]
+
+            if is_light_on:
+                klass.turn_off_lights(light, tr_time=tr_time)
+            else:
+                klass.turn_on_lights(light, tr_time=tr_time)
