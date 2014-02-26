@@ -1,11 +1,17 @@
-from screenshot import Screenshot
+from screenshot import MacScreenshot, WinScreenshot
 from HelloHue import HelloHue
 from datetime import datetime, timedelta
 from time import sleep
+import sys
+
 
 class Ambilight(HelloHue):
 
     MAX_RUN_TIME = 100000
+
+    def __init__(self):
+        super(Ambilight, self).__init__()
+        self.os = sys.platform
 
     def turn_on_ambilight(self, interval=0.2, light_num=None, group_num=None, tr_time=None, run_time=None, region=None):
 
@@ -16,7 +22,11 @@ class Ambilight(HelloHue):
             tr_time = 3
 
         while ((datetime.now() - start_time).seconds < run_time):
-            h, l, s = Screenshot.get_hls_from_screen_capture(region=region)
+            if self.os == "win32":
+                ss = WinScreenshot()
+            else:
+                ss = MacScreenshot(region=region)
+            h, l, s = ss.get_hls()
             # don't let the saturation get too washed out
             s *= 2
             if s < 255:
@@ -25,7 +35,9 @@ class Ambilight(HelloHue):
 
             sleep(interval)
 
+def main():
+    a = Ambilight()
+    a.turn_on_ambilight()
 
-    def turn_on_ambilight_top_third(self, interval=0.2, light_num=None, group_num=None, run_time=None, tr_time=None):
-        region = Screenshot.get_top_third_of_screen()
-        self.turn_on_ambilight(interval=interval, light_num=light_num, group_num=group_num, run_time=run_time, region=region, tr_time=tr_time)
+if __name__ == "__main__":
+    main()
