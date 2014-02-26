@@ -34,3 +34,10 @@ class Ambilight(HelloHue):
             self.set_light_hue_sat_bri(hue=h, sat=s, bri=l, light_num=light_num, group_num=group_num, tr_time=tr_time)
 
             sleep(interval)
+
+def main():
+    a = Ambilight()
+    a.turn_on_ambilight()
+
+if __name__ == "__main__":
+    main()
